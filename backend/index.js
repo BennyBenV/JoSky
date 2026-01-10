@@ -98,10 +98,10 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("start_game", ({ roomId }) => {
+    socket.on("start_game", ({ roomId, settings }) => {
         const room = rooms[roomId];
-        if (room && room.players.length >= 2) { // Min 2 players logic?
-            initGame(roomId);
+        if (room && room.players.length >= 2) {
+            initGame(roomId, settings);
             io.to(roomId).emit("game_started", room);
         }
     });
@@ -350,8 +350,16 @@ function finishRound(room) {
         p.totalScore += p.score;
     });
 
-    // 5. Check Game Over Condition (>= 100 pts)
-    const gameOver = room.players.some(p => p.totalScore >= 100);
+    // 5. Check Game Over Condition
+    let gameOver = false;
+    const limit = room.limit || 100;
+
+    if (limit === '1_ROUND') {
+        gameOver = true;
+    } else {
+        // Score limit (50 or 100)
+        gameOver = room.players.some(p => p.totalScore >= limit);
+    }
 
     if (gameOver) {
         room.gameState = 'GAME_OVER';

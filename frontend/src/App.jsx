@@ -27,9 +27,10 @@ function App() {
   const [showRules, setShowRules] = useState(false);
   const [showRoundSummary, setShowRoundSummary] = useState(true); // Default visible when round ends
 
+  const [gameLimit, setGameLimit] = useState(100); // 100, 50, or '1_ROUND'
+
   useEffect(() => {
-    // Debug confirmation
-    console.log("%c JOSKY RETRO EDITION LOADED ", "background: #000; color: #bada55; font-size: 20px");
+    // Console log removed per request
     document.title = "JoSky - RETRO 90s";
 
     // Auto-reconnect
@@ -122,7 +123,7 @@ function App() {
 
   const handleStartGame = () => {
     if (!room) return;
-    socket.emit('start_game', { roomId: room.id || targetRoomId });
+    socket.emit('start_game', { roomId: room.id || targetRoomId, settings: { limit: gameLimit } });
   };
 
   const handleGameAction = (action, payload) => {
@@ -212,12 +213,13 @@ function App() {
       {phase === 'LOBBY' && (
         <div className="flex flex-col items-center justify-center min-h-screen p-4 pattern-dots-md text-slate-900">
           <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-w-md w-full">
-            <h2 className="text-3xl font-black text-black mb-2 text-center uppercase">Lobby</h2>
+            <h2 className="text-3xl font-black text-black mb-6 text-center uppercase">Lobby</h2>
 
-            <div className="bg-yellow-200 border-2 border-black p-4 mb-6 text-center transform -rotate-1">
-              <span className="text-sm font-bold block mb-1">CODE ROOM</span>
+            {/* Room Code - Improved Visibility */}
+            <div className="bg-yellow-300 border-4 border-black p-6 mb-8 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-black text-white px-3 py-1 text-xs font-bold uppercase tracking-widest">CODE ROOM</span>
               <div
-                className="text-4xl font-mono font-black text-black tracking-widest flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform"
+                className="text-5xl font-mono font-black text-black tracking-widest flex items-center justify-center gap-4 cursor-pointer active:scale-95 transition-transform"
                 onClick={() => {
                   navigator.clipboard.writeText(room?.id || targetRoomId);
                   const el = document.getElementById('copy-feedback');
@@ -226,9 +228,27 @@ function App() {
                 title="Cliquer pour copier"
               >
                 {room?.id || targetRoomId || '...'}
-                <span className="text-2xl opacity-50">📋</span>
+                <span className="text-3xl opacity-100 drop-shadow-sm">📋</span>
               </div>
-              <div id="copy-feedback" className="text-xs font-bold text-green-600 uppercase mt-1 opacity-0 transition-opacity duration-300">Code Copié !</div>
+              <div id="copy-feedback" className="text-sm font-black text-black uppercase mt-2 opacity-0 transition-opacity duration-300 bg-white inline-block px-2 border border-black transform rotate-2">Copié !</div>
+            </div>
+
+            {/* Game Options (Only for Host/Everyone for now) */}
+            <div className="mb-6 border-b-2 border-black pb-6">
+              <label className="block text-sm font-bold uppercase mb-2">Fin de la partie :</label>
+              <div className="flex gap-2">
+                {[100, 50, '1_ROUND'].map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => setGameLimit(opt)}
+                    className={`flex-1 py-2 font-black border-2 border-black text-xs uppercase
+                                ${gameLimit === opt ? 'bg-black text-white shadow-[2px_2px_0px_0px_rgba(100,100,100,1)]' : 'bg-white text-black hover:bg-gray-100'}
+                            `}
+                  >
+                    {opt === '1_ROUND' ? '1 Manche' : `${opt} Pts`}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-3 mb-8">

@@ -67,10 +67,12 @@ function createDeck() {
     return deck;
 }
 
-function initGame(roomId) {
+function initGame(roomId, settings = {}) {
     const room = rooms[roomId];
     if (!room) return;
 
+    room.timeStarted = Date.now();
+    room.limit = settings.limit || 100; // Store limit (100, 50, or '1_ROUND')
     room.deck = createDeck();
     room.discardPile = [room.deck.pop()];
     room.discardPile[0].visible = true; // Reveal discard
