@@ -17,7 +17,7 @@ const io = new Server(httpServer, {
     origin: "*", // Allow any origin for Vercel deployment
     methods: ["GET", "POST"]
 }
-});
+);
 
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
