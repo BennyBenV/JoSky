@@ -14,10 +14,11 @@ const httpServer = http.createServer(app);
 
 // Use the CORS config from user request
 const io = new Server(httpServer, {
-    origin: "*", // Allow any origin for Vercel deployment
-    methods: ["GET", "POST"]
-}
-);
+    cors: {
+        origin: "*", // Allow any origin
+        methods: ["GET", "POST"]
+    }
+});
 
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
