@@ -14,10 +14,9 @@ const httpServer = http.createServer(app);
 
 // Use the CORS config from user request
 const io = new Server(httpServer, {
-    cors: {
-        origin: ["https://ton-projet-vercel.app", "http://localhost:5173", "http://127.0.0.1:5173"], // Added 127.0.0.1 just in case
-        methods: ["GET", "POST"]
-    }
+    origin: "*", // Allow any origin for Vercel deployment
+    methods: ["GET", "POST"]
+}
 });
 
 io.on("connection", (socket) => {
