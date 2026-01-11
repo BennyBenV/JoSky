@@ -26,6 +26,7 @@ function App() {
   const [error, setError] = useState('');
   const [showRules, setShowRules] = useState(false);
   const [showRoundSummary, setShowRoundSummary] = useState(true); // Default visible when round ends
+  const [showGameOverSummary, setShowGameOverSummary] = useState(true);
 
   const [gameLimit, setGameLimit] = useState(100); // 100, 50, or '1_ROUND'
 
@@ -207,39 +208,68 @@ function App() {
 
       {/* LOBBY SCREEN */}
       {phase === 'LOBBY' && (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4 pattern-dots-md text-slate-900">
-          <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-w-md w-full">
-            <h2 className="text-3xl font-black text-black mb-6 text-center uppercase">Lobby</h2>
+        <div className="flex flex-col items-center justify-center min-h-screen p-4 pattern-dots-md text-slate-900 bg-yellow-50">
+          <div className="bg-white border-4 border-black p-6 md:p-8 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-md w-full relative overflow-hidden">
 
-            {/* Room Code - Improved Visibility */}
-            <div className="bg-yellow-300 border-4 border-black p-6 mb-8 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative">
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-black text-white px-3 py-1 text-xs font-bold uppercase tracking-widest">CODE ROOM</span>
+            {/* Header Decoration */}
+            <div className="absolute top-0 left-0 w-full h-4 bg-cyan-400 border-b-4 border-black"></div>
+
+            <div className="relative mb-8 text-center mt-4">
+              <h2 className="text-5xl md:text-6xl font-black text-black uppercase tracking-tighter transform -rotate-2 inline-block bg-yellow-400 border-4 border-black px-4 py-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-10 relative">
+                Lobby
+              </h2>
+              <div className="absolute top-1/2 left-0 w-full h-1 bg-black -z-0"></div>
+            </div>
+
+            {/* Room Code Ticket */}
+            <div className="mb-8 relative group">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                <span className="bg-black text-yellow-400 px-3 py-1 text-xs font-black uppercase tracking-widest border-2 border-white transform -rotate-1 shadow-sm inline-block">
+                  Ticket d'entrée
+                </span>
+              </div>
+
               <div
-                className="text-5xl font-mono font-black text-black tracking-widest flex items-center justify-center gap-4 cursor-pointer active:scale-95 transition-transform"
+                className="w-full bg-cyan-100 border-4 border-dashed border-black p-4 pt-6 rounded-xl flex items-center justify-between gap-4 cursor-pointer hover:bg-cyan-200 transition-colors relative overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-[2px] active:translate-x-[2px]"
                 onClick={() => {
                   navigator.clipboard.writeText(room?.id || targetRoomId);
-                  const el = document.getElementById('copy-feedback');
-                  if (el) { el.classList.remove('opacity-0'); setTimeout(() => el.classList.add('opacity-0'), 2000); }
+                  const el = document.getElementById('copy-toast');
+                  if (el) { el.classList.remove('translate-y-full', 'opacity-0'); setTimeout(() => el.classList.add('translate-y-full', 'opacity-0'), 2000); }
                 }}
-                title="Cliquer pour copier"
               >
-                {room?.id || targetRoomId || '...'}
-                <span className="text-3xl opacity-100 drop-shadow-sm">📋</span>
+                <div className="absolute inset-x-0 bottom-0 h-2 bg-yellow-400 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
+
+                <div className="flex flex-col items-center flex-1">
+                  <span className="text-[10px] font-bold uppercase text-cyan-800 tracking-widest mb-1">Code Room</span>
+                  <span className="text-4xl md:text-5xl font-mono font-black text-black tracking-wider" style={{ textShadow: '2px 2px 0px #fff' }}>
+                    {room?.id || targetRoomId || '...'}
+                  </span>
+                </div>
+
+                <button className="bg-pink-500 hover:bg-pink-400 text-white border-2 border-black p-3 rounded-lg shadow-sm group-active:scale-95 transition-transform z-10 flex-shrink-0">
+                  <span className="text-xl">📋</span>
+                </button>
               </div>
-              <div id="copy-feedback" className="text-sm font-black text-black uppercase mt-2 opacity-0 transition-opacity duration-300 bg-white inline-block px-2 border border-black transform rotate-2">Copié !</div>
+
+              {/* Toast */}
+              <div id="copy-toast" className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black text-white px-3 py-1 rounded-full text-xs font-bold shadow-md transform translate-y-full opacity-0 transition-all duration-300 z-50 whitespace-nowrap border-2 border-white pointer-events-none">
+                ✅ CODE COPIÉ !
+              </div>
             </div>
 
             {/* Game Options (Host Only) */}
             {room?.players?.[0]?.id === playerId ? (
-              <div className="mb-6 border-b-2 border-black pb-6">
-                <label className="block text-sm font-bold uppercase mb-2">Fin de la partie :</label>
-                <div className="flex gap-2">
+              <div className="mb-8 border-b-4 border-black border-double pb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-black uppercase bg-black text-white px-2 py-0.5 transform -rotate-1">Objectif :</label>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
                   {[100, 50, '1_ROUND'].map((opt) => (
                     <button
                       key={opt}
                       onClick={() => setGameLimit(opt)}
-                      className={`flex-1 py-2 font-black border-2 border-black text-xs uppercase
-                                ${gameLimit === opt ? 'bg-black text-white shadow-[2px_2px_0px_0px_rgba(100,100,100,1)]' : 'bg-white text-black hover:bg-gray-100'}
+                      className={`py-2 px-1 font-black border-2 border-black text-[10px] md:text-xs uppercase transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-[2px] active:translate-x-[2px]
+                                ${gameLimit === opt ? 'bg-orange-400 text-white transform -rotate-1 scale-105 z-10' : 'bg-white text-black hover:bg-gray-50'}
                             `}
                     >
                       {opt === '1_ROUND' ? '1 Manche' : `${opt} Pts`}
@@ -248,60 +278,71 @@ function App() {
                 </div>
               </div>
             ) : (
-              <div className="mb-6 border-b-2 border-black pb-6 text-center opacity-50">
-                <div className="text-xs font-bold uppercase">En attente du chef...</div>
-                <div className="font-black">Mode de jeu : {room.limit === '1_ROUND' ? '1 Manche' : (room.limit || 100) + ' Pts'}</div>
+              <div className="mb-8 border-b-4 border-black border-double pb-6 text-center">
+                <div className="inline-block bg-gray-200 border-2 border-black px-4 py-2 transform rotate-1">
+                  <div className="text-[10px] font-bold uppercase text-gray-500 mb-1">Mode de jeu</div>
+                  <div className="font-black text-xl">{room.limit === '1_ROUND' ? 'MORT SUBITE (1 Manche)' : `PREMIER À ${room.limit || 100} PTS`}</div>
+                </div>
               </div>
             )}
 
             <div className="space-y-3 mb-8">
-              <div className="text-sm font-bold uppercase border-b-2 border-black pb-1 mb-2">Joueurs prêts</div>
-              {room?.players?.map((p, i) => (
-                <div key={p.id} className="flex justify-between items-center bg-white border-2 border-black px-4 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                  <span className="font-bold flex items-center gap-2">
-                    {i === 0 && <span className="text-xl">👑</span>}
-                    {p.pseudo} {p.id === playerId && "(Moi)"}
-                  </span>
-                  <span className="text-xs font-black bg-green-400 border border-black px-2 py-0.5 rounded-full text-black">PRÊT</span>
-                </div>
-              ))}
-              {(!room?.players || room.players.length === 0) && <div className="text-gray-500 italic">En attente de copains...</div>}
-            </div>
-
-            {room?.players?.[0]?.id === playerId ? (
-              <button
-                onClick={handleStartGame}
-                disabled={!room || room.players.length < 2}
-                className={`w-full font-black py-4 border-2 border-black transition-all ${(!room || room.players.length < 2)
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-50'
-                  : 'bg-green-400 hover:bg-green-300 text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
-                  }`}
-              >
-                {(!room || room.players.length < 2) ? 'ATTENTE JOUEURS (MIN 2)' : 'LANCER LA PARTIE !'}
-              </button>
-            ) : (
-              <div className="w-full font-black py-4 border-2 border-black bg-gray-100 text-gray-500 text-center uppercase">
-                En attente du lancement... ⏳
+              <div className="flex justify-between items-end mb-2 border-b-2 border-black pb-1">
+                <span className="text-sm font-black uppercase">Joueurs</span>
+                <span className="text-xs font-bold bg-black text-white px-2 rounded-full">{room?.players?.length || 0} / 8</span>
               </div>
-            )}
 
-            <div className="mt-4 text-xs font-bold text-center text-gray-500">
-              Copie le code et envoie-le !
+              <div className="space-y-2 max-h-48 overflow-y-auto p-1">
+                {room?.players?.map((p, i) => (
+                  <div key={p.id} className="flex justify-between items-center bg-white border-2 border-black p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 transition-transform">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 flex items-center justify-center border-2 border-black font-black text-white ${i === 0 ? 'bg-yellow-400' : 'bg-purple-500'}`}>
+                        {p.pseudo.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold leading-none text-sm">{p.pseudo} {p.id === playerId && <span className="text-[10px] text-gray-500">(Toi)</span>}</span>
+                        {i === 0 && <span className="text-[9px] font-bold text-yellow-600 uppercase">Chef de room</span>}
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black bg-green-100 text-green-700 border border-green-700 px-2 py-0.5 rounded-full uppercase tracking-wide">PRÊT</span>
+                  </div>
+                ))}
+                {(!room?.players || room.players.length === 0) && <div className="text-gray-400 italic text-center py-4">En attente de copains...</div>}
+              </div>
             </div>
 
-            <button
-              onClick={() => {
-                if (room) {
-                  socket.emit('leave_room', { roomId: room.id, userId: playerId });
-                  setRoom(null);
-                  setPhase('LOGIN');
-                  sessionStorage.removeItem("josky_roomId");
-                }
-              }}
-              className="mt-6 w-full bg-transparent hover:bg-red-50 text-red-500 border-2 border-transparent hover:border-red-500 font-bold py-2 text-sm transition-all"
-            >
-              QUITTER LA ROOM 🚪
-            </button>
+            <div className="flex flex-col gap-3">
+              {room?.players?.[0]?.id === playerId ? (
+                <button
+                  onClick={handleStartGame}
+                  disabled={!room || room.players.length < 2}
+                  className={`w-full font-black py-4 border-2 border-black text-lg transition-all uppercase tracking-widest ${(!room || room.players.length < 2)
+                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-50'
+                    : 'bg-green-400 hover:bg-green-300 text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none animate-pulse hover:animate-none'
+                    }`}
+                >
+                  {(!room || room.players.length < 2) ? 'Attente joueurs...' : '🚀 LANCER LA PARTIE !'}
+                </button>
+              ) : (
+                <div className="w-full font-black py-4 border-2 border-black bg-gray-100 text-gray-400 text-center uppercase tracking-widest cursor-wait">
+                  En attente du chef... ☕
+                </div>
+              )}
+
+              <button
+                onClick={() => {
+                  if (room) {
+                    socket.emit('leave_room', { roomId: room.id, userId: playerId });
+                    setRoom(null);
+                    setPhase('LOGIN');
+                    sessionStorage.removeItem("josky_roomId");
+                  }
+                }}
+                className="w-full bg-transparent hover:bg-red-50 text-red-500 border-2 border-transparent hover:border-red-500 font-bold py-2 text-xs transition-all uppercase"
+              >
+                Quitter la room
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -360,58 +401,88 @@ function App() {
 
           {/* GAME OVER OVERLAY */}
           {room?.gameState === 'GAME_OVER' && (
-            <div className="fixed inset-0 z-50 bg-yellow-400 flex items-center justify-center p-4 pattern-grid-lg">
-              <div className="bg-white border-4 border-black p-8 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-lg w-full text-center">
-                <h1 className="text-6xl font-black uppercase mb-8 text-black" style={{ textShadow: '4px 4px 0px #fff' }}>GAME OVER</h1>
+            <>
+              {showGameOverSummary ? (
+                <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+                  <div className="bg-yellow-400 border-4 border-black p-6 md:p-8 shadow-[12px_12px_0px_0px_rgba(255,255,255,1)] max-w-lg w-full text-center relative max-h-[90vh] overflow-y-auto">
 
-                <div className="mb-8">
-                  <div className="text-xl font-bold uppercase mb-4">Et le vainqueur est...</div>
-                  {(() => {
-                    const winner = room.players.reduce((prev, curr) => (prev.totalScore < curr.totalScore) ? prev : curr);
-                    return (
-                      <div className="inline-block bg-green-400 border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transform rotate-2 animate-bounce">
-                        <div className="text-4xl font-black uppercase">{winner.pseudo}</div>
-                        <div className="text-lg font-bold">avec {winner.totalScore} points !</div>
-                      </div>
-                    );
-                  })()}
-                </div>
+                    {/* TOGGLE VIEW BOARD BUTTON */}
+                    <button
+                      onClick={() => setShowGameOverSummary(false)}
+                      className="absolute top-2 right-2 bg-white hover:bg-gray-100 text-black font-bold p-2 rounded-full w-8 h-8 flex items-center justify-center border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
+                      title="Voir le plateau"
+                    >
+                      👁️
+                    </button>
 
-                <div className="space-y-2 mb-8">
-                  {room.players.sort((a, b) => a.totalScore - b.totalScore).map((p, i) => (
-                    <div key={p.id} className="flex justify-between border-b-2 border-black py-2">
-                      <span className="font-bold">{i + 1}. {p.pseudo}</span>
-                      <span className="font-mono font-black">{p.totalScore} pts</span>
+                    <h1 className="text-4xl md:text-6xl font-black uppercase mb-6 text-black tracking-tighter transform -rotate-2" style={{ textShadow: '2px 2px 0px #fff' }}>GAME OVER</h1>
+
+                    <div className="mb-6">
+                      <div className="text-lg md:text-xl font-bold uppercase mb-4">🏆 LE CHAMPION 🏆</div>
+                      {(() => {
+                        // Find winner (lowest score)
+                        const winner = room.players.reduce((prev, curr) => (prev.totalScore < curr.totalScore) ? prev : curr);
+                        return (
+                          <div className="inline-block bg-white border-4 border-black p-4 md:p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transform rotate-2 animate-bounce">
+                            <div className="text-2xl md:text-4xl font-black uppercase mb-1">{winner.pseudo}</div>
+                            <div className="text-sm md:text-lg font-bold bg-green-200 inline-block px-2 border border-black rounded-full">
+                              Score Final: {winner.totalScore} pts
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
-                  ))}
-                </div>
 
-                <div className="flex gap-4 justify-center">
-                  <button
-                    onClick={() => {
-                      if (room) socket.emit('restart_game', { roomId: room.id });
-                    }}
-                    className="bg-black text-white hover:bg-gray-800 border-2 border-black font-black py-3 px-6 shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-1 active:shadow-none"
-                  >
-                    REJOUER 🔄
-                  </button>
+                    <div className="space-y-3 mb-8 text-left bg-white p-4 border-2 border-black">
+                      <h3 className="font-black uppercase border-b-2 border-black pb-2 mb-2 text-center">Classement Final</h3>
+                      {room.players
+                        .sort((a, b) => a.totalScore - b.totalScore)
+                        .map((p, index) => (
+                          <div key={p.id} className="flex justify-between items-center border-b border-gray-200 last:border-0 py-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-xl w-6">{index + 1}.</span>
+                              <span className="font-bold">{p.pseudo}</span>
+                            </div>
+                            <span className="font-mono font-bold text-lg">{p.totalScore} pts</span>
+                          </div>
+                        ))}
+                    </div>
 
-                  <button
-                    onClick={() => {
-                      if (room) {
-                        socket.emit('leave_room', { roomId: room.id, userId: playerId });
-                        setRoom(null);
-                        setPhase('LOGIN');
-                        sessionStorage.removeItem("josky_roomId");
-                      }
-                    }}
-                    className="bg-red-500 text-white hover:bg-red-600 border-2 border-black font-black py-3 px-6 shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-1 active:shadow-none"
-                  >
-                    QUITTER 🚪
-                  </button>
+                    <div className="flex flex-col gap-3">
+                      <button
+                        onClick={() => {
+                          if (room) socket.emit('restart_game', { roomId: room.id });
+                        }}
+                        className="w-full bg-black text-white hover:bg-gray-800 border-2 border-black font-black py-3 px-6 shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-1 active:shadow-none"
+                      >
+                        REJOUER 🔄
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (room) {
+                            socket.emit('leave_room', { roomId: room.id, userId: playerId });
+                            setRoom(null);
+                            setPhase('LOGIN');
+                            sessionStorage.removeItem("josky_roomId");
+                          }
+                        }}
+                        className="w-full bg-transparent hover:bg-red-50 text-red-600 border-2 border-transparent hover:border-red-600 font-bold py-2 text-sm transition-all"
+                      >
+                        QUITTER LA ROOM 🚪
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              ) : (
+                <button
+                  onClick={() => setShowGameOverSummary(true)}
+                  className="fixed bottom-4 left-4 z-50 bg-black text-white border-2 border-white px-4 py-2 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] animate-bounce"
+                >
+                  🏆 VOIR PODIUM
+                </button>
+              )}
+            </>
           )}
 
           {/* Actual Game Board */}

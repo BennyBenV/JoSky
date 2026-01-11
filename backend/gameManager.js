@@ -177,13 +177,7 @@ function startNextRound(roomId) {
 }
 
 
-function cancelDraw(player, room) {
-    if (room.turnState === 'PLACING' && room.drawnCard) {
-        room.deck.push(room.drawnCard);
-        room.drawnCard = null;
-        room.turnState = 'CHOOSING';
-    }
-}
+
 
 function checkColumnRule(player, discardPile) {
     // Grid 4 columns x 3 rows. Indices:
@@ -243,5 +237,5 @@ module.exports = {
     startGameplay,
     checkColumnRule,
     calculateScore,
-    cancelDraw
+    calculateScore
 };

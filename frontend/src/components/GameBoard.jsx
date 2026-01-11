@@ -61,19 +61,21 @@ const GameBoard = ({ room, playerId, onAction }) => {
     return (
         <div className="w-full min-h-[100dvh] bg-yellow-50 flex flex-col overflow-y-auto font-sans text-slate-900 relative pb-10">
 
-            {/* --- TOP BAR: INFO & TOGGLE --- */}
-            <div className="flex-shrink-0 h-14 bg-white border-b-2 border-black flex justify-between items-center px-4 shadow-sm z-20 sticky top-0">
+            {/* --- TOP BAR: TRAFFIC LIGHT BANNER --- */}
+            <div className={`flex-shrink-0 h-16 border-b-4 border-black flex justify-between items-center px-4 shadow-md z-30 sticky top-0 transition-colors duration-300 ${isMyTurn ? 'bg-green-400' : 'bg-gray-200'}`}>
                 {/* Left: Turn Info */}
                 <div className="flex flex-col leading-none">
-                    <span className="text-[10px] text-gray-400 font-bold uppercase">Tour de</span>
-                    <span className={`text-sm font-black uppercase ${isMyTurn ? 'text-green-600 animate-pulse' : 'text-black'}`}>
-                        {isMyTurn ? "C'EST À TOI !" : activePlayer?.pseudo}
+                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">
+                        {isMyTurn ? "C'EST TON TOUR !" : "TOUR DE L'ADVERSAIRE"}
+                    </span>
+                    <span className="text-xl md:text-2xl font-black uppercase tracking-tighter truncate max-w-[200px]">
+                        {isMyTurn ? "À TOI DE JOUER 🫵" : activePlayer?.pseudo}
                     </span>
                 </div>
 
                 {/* Center: Setup status if needed */}
                 {room.gameState === 'SETUP' && (
-                    <div className="absolute left-1/2 -translate-x-1/2 bg-yellow-400 px-3 py-1 border-2 border-black font-black text-xs animate-bounce whitespace-nowrap">
+                    <div className="absolute left-1/2 -translate-x-1/2 bg-yellow-400 px-4 py-1 border-2 border-black font-black text-xs animate-bounce whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                         SETUP ({player.revealedCount}/2)
                     </div>
                 )}
@@ -82,17 +84,17 @@ const GameBoard = ({ room, playerId, onAction }) => {
                 {opponents.length > 0 && (
                     <button
                         onClick={() => setShowOpponents(!showOpponents)}
-                        className={`flex items-center gap-2 px-3 py-1 border-2 border-black rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs font-bold transition-all ${showOpponents ? 'bg-black text-white' : 'bg-white text-black active:translate-y-0.5 active:shadow-none'}`}
+                        className={`flex items-center gap-2 px-3 py-2 border-2 border-black font-black text-xs transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none ${showOpponents ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-50'}`}
                     >
-                        👥 {showOpponents ? 'FERMER' : 'ADVERSAIRES'}
+                        👥 {showOpponents ? 'FERMER' : 'LES AUTRES'}
                     </button>
                 )}
             </div>
 
             {/* --- OPPONENTS OVERLAY (MODAL) --- */}
             {showOpponents && (
-                <div className="fixed top-14 left-0 w-full bg-white/95 backdrop-blur-sm border-b-4 border-black z-30 p-4 shadow-xl animate-in slide-in-from-top-4 duration-200">
-                    <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                <div className="fixed top-16 left-0 w-full bg-white/95 backdrop-blur-sm border-b-4 border-black z-50 p-4 shadow-xl animate-in slide-in-from-top-4 duration-200">
+                    <div className="flex gap-4 overflow-x-auto py-4 no-scrollbar">
                         {opponents.map(opp => {
                             const isNext = opp.id === nextPlayerId;
                             return (
@@ -119,14 +121,14 @@ const GameBoard = ({ room, playerId, onAction }) => {
             )}
 
             {/* --- MAIN GAME AREA --- */}
-            <div className="flex-1 flex flex-col items-center justify-start w-full max-w-md mx-auto h-full pb-6">
+            <div className={`flex-1 flex flex-col items-center justify-start w-full max-w-md mx-auto h-full pb-6 transition-opacity duration-500 ${!isMyTurn && room.gameState !== 'SETUP' ? 'opacity-90' : 'opacity-100'}`}>
 
                 {/* 1. ACTION ZONE (Deck/Discard) - Takes ~35-40% */}
                 <div className="h-48 w-full flex-shrink-0 flex flex-col items-center justify-center relative mt-2">
 
-                    {/* Status Banner */}
-                    <div className={`mb-4 px-4 py-1 text-[10px] font-black uppercase tracking-widest border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${isMyTurn ? 'bg-green-400 text-black animate-pulse' : 'bg-gray-100 text-gray-400'}`}>
-                        {isMyTurn ? (turnState === 'CHOOSING' ? "PIOCHE OU DÉFAUSSE" : "POSE TA CARTE") : `ATTENTE DE ${activePlayer?.pseudo}...`}
+                    {/* Status Hint */}
+                    <div className={`mb-4 px-4 py-1 text-[10px] font-black uppercase tracking-widest border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all ${isMyTurn ? 'bg-white text-black scale-105' : 'bg-gray-100 text-gray-400'}`}>
+                        {isMyTurn ? (turnState === 'CHOOSING' ? "👉 PIOCHE UNE CARTE" : "👇 PLACE TA CARTE") : "⏳ PATIENTEZ..."}
                     </div>
 
                     <div className="flex items-center gap-6 md:gap-10 h-32 md:h-40 relative">
@@ -184,17 +186,10 @@ const GameBoard = ({ room, playerId, onAction }) => {
                                         <>
                                             {/* ACTION: KEEP OR DISCARD */}
                                             {actionState === 'SELECT_TO_FLIP_FOR_DISCARD' ? (
-                                                // ... (Cancel Flip Mode UI)
                                                 <div className="w-full flex flex-col gap-2">
-                                                    <div className="bg-orange-100 text-orange-800 text-[9px] font-bold p-1 text-center border border-orange-300">
-                                                        Choisis une carte à révéler...
+                                                    <div className="text-[9px] font-bold text-gray-400 text-center uppercase tracking-widest">
+                                                        Sélection...
                                                     </div>
-                                                    <button
-                                                        onClick={() => setActionState(null)}
-                                                        className="w-full bg-white text-black font-black text-[10px] py-2 px-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none hover:bg-gray-100"
-                                                    >
-                                                        ANNULER (Garder la carte)
-                                                    </button>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col gap-2 w-full">
@@ -203,14 +198,6 @@ const GameBoard = ({ room, playerId, onAction }) => {
                                                         className="w-full bg-red-500 text-white font-black text-[10px] py-2 px-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none hover:bg-red-400"
                                                     >
                                                         JETER & RÉVÉLER
-                                                    </button>
-
-                                                    {/* NEW: UNDO DRAW ACTION */}
-                                                    <button
-                                                        onClick={() => onAction('CANCEL_DRAW')}
-                                                        className="w-full bg-gray-200 text-gray-500 font-bold text-[9px] py-1 px-1 border border-gray-400 hover:bg-gray-300 hover:text-black hover:border-black transition-colors"
-                                                    >
-                                                        ↩️ ANNULER LA PIOCHE
                                                     </button>
                                                 </div>
                                             )}
@@ -222,22 +209,15 @@ const GameBoard = ({ room, playerId, onAction }) => {
                     </div>
                 </div>
 
-                {/* 2. PLAYER GRID (Bottom) - Takes Remaining Space with SCROLL */}
-                <div className="flex-1 w-full bg-white border-t-2 border-black relative min-h-[350px]">
-                    {/* Interaction Hint & Cancel Button */}
-                    {(actionState === 'SELECT_TO_SWAP_DISCARD' || (turnState === 'PLACING' && !actionState) || actionState === 'SELECT_TO_FLIP_FOR_DISCARD') && (
-                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 z-50 w-max">
-                            {/* Text removed as per user request to avoid obstruction */}
+                {/* 2. PLAYER GRID (Bottom) - FOCUS MODE */}
+                <div className="flex-1 w-full bg-white border-t-2 border-black relative min-h-[350px] overflow-hidden">
 
-
-                            {actionState && (
-                                <button
-                                    onClick={() => setActionState(null)}
-                                    className="bg-red-500 text-white border-2 border-black px-3 py-1 text-[10px] font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none hover:bg-red-400 transition-colors"
-                                >
-                                    ANNULER L'ACTION ❌
-                                </button>
-                            )}
+                    {/* Dark Overlay when NOT my turn */}
+                    {!isMyTurn && room.gameState !== 'SETUP' && (
+                        <div className="absolute inset-0 bg-black/40 z-20 backdrop-grayscale-[50%] flex items-center justify-center">
+                            <div className="bg-black text-white px-4 py-2 font-black uppercase text-sm border-2 border-white transform -rotate-3 shadow-lg">
+                                Attente du joueur...
+                            </div>
                         </div>
                     )}
 
@@ -266,13 +246,25 @@ const GameBoard = ({ room, playerId, onAction }) => {
                             ))}
                         </div>
                     </div>
+
+                    {/* --- GLOBAL CANCEL BUTTON --- */}
+                    {(actionState === 'SELECT_TO_SWAP_DISCARD' || (turnState === 'PLACING' && !actionState) || actionState === 'SELECT_TO_FLIP_FOR_DISCARD') && actionState && (
+                        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-200">
+                            <button
+                                onClick={() => setActionState(null)}
+                                className="bg-red-500 text-white border-2 border-black px-6 py-3 rounded-full text-sm font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none hover:bg-red-400 object-center flex items-center gap-2 transition-all uppercase tracking-widest"
+                            >
+                                <span>Annuler</span>
+                                <span className="text-lg">❌</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-            </div>
-
-            {/* Footer Credit */}
-            <div className="text-center py-2 text-[8px] font-bold text-gray-400 opacity-50">
-                JOSKY FOCUS UI
+                {/* Footer Credit */}
+                <div className="text-center py-2 text-[8px] font-bold text-gray-400 opacity-50">
+                    JOSKY FOCUS UI
+                </div>
             </div>
         </div>
     );

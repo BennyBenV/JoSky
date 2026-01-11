@@ -222,10 +222,6 @@ io.on("connection", (socket) => {
 
             endTurn(room);
         }
-        else if (action === 'CANCEL_DRAW') { // NEW: UNDO DRAW
-            const { cancelDraw } = require('./gameManager');
-            cancelDraw(player, room);
-        }
 
         io.to(roomId).emit("game_update", room);
     });
