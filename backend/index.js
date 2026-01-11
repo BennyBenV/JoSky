@@ -111,6 +111,23 @@ io.on("connection", (socket) => {
         }
     });
 
+    socket.on("update_settings", ({ roomId, settings }) => {
+        const room = rooms[roomId];
+        if (room) {
+            // Host check? Technically yes, but frontend hides it.
+            // Check if requester is Host (Index 0)
+            if (room.players[0].socketId !== socket.id) {
+                return;
+            }
+
+            if (settings.limit) {
+                room.limit = settings.limit;
+                // Broadcast change to everyone in lobby
+                io.to(roomId).emit("game_update", room);
+            }
+        }
+    });
+
     // --- Game Events ---
 
     socket.on("action", ({ roomId, action, payload }) => {
@@ -264,6 +281,34 @@ io.on("connection", (socket) => {
 
             io.to(roomId).emit("game_update", room); // Notify change
             io.to(roomId).emit("player_list_update", room.players); // Update lobby list
+        }
+    });
+
+    socket.on("send_message", ({ roomId, text }) => {
+        console.log(`[CHAT] SERVER Received from ${socket.id} for room ${roomId}: ${text}`);
+        const room = rooms[roomId];
+        if (room) {
+            const player = room.players.find(p => p.socketId === socket.id);
+            if (player) {
+                console.log(`[CHAT] Player found: ${player.pseudo}`);
+                const message = {
+                    id: uuidv4(),
+                    sender: player.pseudo,
+                    senderId: player.id,
+                    text: text.trim().substring(0, 200),
+                    timestamp: Date.now()
+                };
+
+                room.messages.push(message);
+                if (room.messages.length > 50) room.messages.shift();
+
+                io.to(roomId).emit("chat_update", room.messages);
+                console.log(`[CHAT] Sent update with ${room.messages.length} messages`);
+            } else {
+                console.log(`[CHAT] ERROR: Player not found for socket ${socket.id}`);
+            }
+        } else {
+            console.log(`[CHAT] ERROR: Room ${roomId} not found`);
         }
     });
 

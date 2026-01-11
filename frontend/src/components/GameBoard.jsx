@@ -261,10 +261,7 @@ const GameBoard = ({ room, playerId, onAction }) => {
                     )}
                 </div>
 
-                {/* Footer Credit */}
-                <div className="text-center py-2 text-[8px] font-bold text-gray-400 opacity-50">
-                    JOSKY FOCUS UI
-                </div>
+
             </div>
         </div>
     );

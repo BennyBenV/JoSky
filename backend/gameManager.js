@@ -45,6 +45,8 @@ class Room {
         this.drawnCard = null; // Card drawn from deck but not yet placed (temp state)
         this.finalTurnInitiatorId = null; // ID of player who first revealed all cards
         this.turnState = 'CHOOSING'; // CHOOSING (Deck/Discard), PLACING (if drew from deck)
+        this.messages = []; // Chat messages history
+        this.limit = 100; // Default Game Limit
     }
 }
 

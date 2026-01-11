@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import GameBoard from './components/GameBoard';
 import RulesModal from './components/RulesModal';
+import ChatBox from './components/ChatBox';
 
 // Initialize socket outside component to prevent multiple connections
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
@@ -138,7 +139,7 @@ function App() {
       {phase === 'LOBBY' && (
         <button
           onClick={() => setShowRules(true)}
-          className="fixed bottom-4 right-4 bg-white border-2 border-black px-4 py-2 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100 z-50 transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
+          className="fixed bottom-4 left-4 bg-white border-2 border-black px-4 py-2 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100 z-50 transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
         >
           📖 RÈGLES
         </button>
@@ -267,9 +268,13 @@ function App() {
                   {[100, 50, '1_ROUND'].map((opt) => (
                     <button
                       key={opt}
-                      onClick={() => setGameLimit(opt)}
+                      onClick={() => {
+                        // setGameLimit(opt); // Redundant if we sync, but good for instant reaction? 
+                        // Actually better to just emit
+                        socket.emit('update_settings', { roomId: room.id, settings: { limit: opt } });
+                      }}
                       className={`py-2 px-1 font-black border-2 border-black text-[10px] md:text-xs uppercase transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-[2px] active:translate-x-[2px]
-                                ${gameLimit === opt ? 'bg-orange-400 text-white transform -rotate-1 scale-105 z-10' : 'bg-white text-black hover:bg-gray-50'}
+                                ${(room?.limit || 100) === opt ? 'bg-orange-400 text-white transform -rotate-1 scale-105 z-10' : 'bg-white text-black hover:bg-gray-50'}
                             `}
                     >
                       {opt === '1_ROUND' ? '1 Manche' : `${opt} Pts`}
@@ -488,6 +493,11 @@ function App() {
           {/* Actual Game Board */}
           <GameBoard room={room} playerId={playerId} onAction={handleGameAction} />
         </div>
+      )}
+
+      {/* GLOBAL CHAT (Visible in Lobby & Game) */}
+      {room && (
+        <ChatBox room={room} socket={socket} playerId={playerId} />
       )}
 
     </div>
