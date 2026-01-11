@@ -144,7 +144,15 @@ const GameBoard = ({ room, playerId, onAction }) => {
                         {/* DISCARD */}
                         <div className="relative h-full aspect-[2/3]">
                             <div
-                                onClick={() => isMyTurn && turnState === 'CHOOSING' && setActionState('SELECT_TO_SWAP_DISCARD')}
+                                onClick={() => {
+                                    if (isMyTurn && turnState === 'CHOOSING') {
+                                        if (actionState === 'SELECT_TO_SWAP_DISCARD') {
+                                            setActionState(null); // Toggle Off
+                                        } else {
+                                            setActionState('SELECT_TO_SWAP_DISCARD'); // Toggle On
+                                        }
+                                    }
+                                }}
                                 className={`
                                     w-full h-full rounded-lg border-2 border-black flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden transition-all
                                     ${isMyTurn && turnState === 'CHOOSING' ? 'cursor-pointer ring-4 ring-pink-400 bg-pink-50 hover:-translate-y-1' : 'bg-white'}
@@ -165,7 +173,7 @@ const GameBoard = ({ room, playerId, onAction }) => {
 
                         {/* DRAWN CARD STATUS (Floating Overlay) */}
                         {drawnCard && (
-                            <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
+                            <div className="absolute inset-x-0 -top-16 md:-top-20 z-40 flex items-center justify-center pointer-events-none">
                                 <div className="pointer-events-auto bg-white p-3 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center animate-in zoom-in duration-200">
                                     <div className="text-[10px] font-black uppercase mb-2 bg-yellow-400 px-2 border border-black">Carte Piochée</div>
                                     <div className="h-32 aspect-[2/3] mb-2">
@@ -173,12 +181,40 @@ const GameBoard = ({ room, playerId, onAction }) => {
                                     </div>
 
                                     {turnState === 'PLACING' && (
-                                        <button
-                                            onClick={() => setActionState('SELECT_TO_FLIP_FOR_DISCARD')}
-                                            className="w-full bg-red-500 text-white font-black text-[10px] py-2 px-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none hover:bg-red-400"
-                                        >
-                                            JETER & RÉVÉLER
-                                        </button>
+                                        <>
+                                            {/* ACTION: KEEP OR DISCARD */}
+                                            {actionState === 'SELECT_TO_FLIP_FOR_DISCARD' ? (
+                                                // ... (Cancel Flip Mode UI)
+                                                <div className="w-full flex flex-col gap-2">
+                                                    <div className="bg-orange-100 text-orange-800 text-[9px] font-bold p-1 text-center border border-orange-300">
+                                                        Choisis une carte à révéler...
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setActionState(null)}
+                                                        className="w-full bg-white text-black font-black text-[10px] py-2 px-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none hover:bg-gray-100"
+                                                    >
+                                                        ANNULER (Garder la carte)
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col gap-2 w-full">
+                                                    <button
+                                                        onClick={() => setActionState('SELECT_TO_FLIP_FOR_DISCARD')}
+                                                        className="w-full bg-red-500 text-white font-black text-[10px] py-2 px-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none hover:bg-red-400"
+                                                    >
+                                                        JETER & RÉVÉLER
+                                                    </button>
+
+                                                    {/* NEW: UNDO DRAW ACTION */}
+                                                    <button
+                                                        onClick={() => onAction('CANCEL_DRAW')}
+                                                        className="w-full bg-gray-200 text-gray-500 font-bold text-[9px] py-1 px-1 border border-gray-400 hover:bg-gray-300 hover:text-black hover:border-black transition-colors"
+                                                    >
+                                                        ↩️ ANNULER LA PIOCHE
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             </div>
@@ -188,10 +224,20 @@ const GameBoard = ({ room, playerId, onAction }) => {
 
                 {/* 2. PLAYER GRID (Bottom) - Takes Remaining Space with SCROLL */}
                 <div className="flex-1 w-full bg-white border-t-2 border-black relative min-h-[350px]">
-                    {/* Interaction Hint */}
-                    {(actionState === 'SELECT_TO_SWAP_DISCARD' || turnState === 'PLACING') && (
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-1 text-[10px] font-bold rounded-full animate-bounce z-10 border border-white shadow-lg">
-                            👇 CHOISIS OÙ PLACER TA CARTE 👇
+                    {/* Interaction Hint & Cancel Button */}
+                    {(actionState === 'SELECT_TO_SWAP_DISCARD' || (turnState === 'PLACING' && !actionState) || actionState === 'SELECT_TO_FLIP_FOR_DISCARD') && (
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 z-50 w-max">
+                            {/* Text removed as per user request to avoid obstruction */}
+
+
+                            {actionState && (
+                                <button
+                                    onClick={() => setActionState(null)}
+                                    className="bg-red-500 text-white border-2 border-black px-3 py-1 text-[10px] font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none hover:bg-red-400 transition-colors"
+                                >
+                                    ANNULER L'ACTION ❌
+                                </button>
+                            )}
                         </div>
                     )}
 
