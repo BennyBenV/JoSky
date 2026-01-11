@@ -36,20 +36,16 @@ function App() {
     // Auto-reconnect
     const savedRoomId = sessionStorage.getItem("josky_roomId");
     if (savedRoomId && playerId) {
-      console.log("Attempting Rejoin:", savedRoomId);
       socket.emit("rejoin_game", { roomId: savedRoomId, userId: playerId });
     }
   }, []); // Run once
 
   useEffect(() => {
-    // ... Socket events ... (keeping same)
     socket.on('connect', () => {
-      console.log("Connected:", socket.id);
       // Don't overwrite playerId from socket.id anymore! We use stable ID.
     });
 
     socket.on('room_created', ({ roomId, playerId }) => {
-      console.log("Room Created:", roomId);
       // setPlayerId(playerId); // Already have it
       sessionStorage.setItem("josky_roomId", roomId);
       setRoom({ id: roomId, players: [] });
@@ -57,14 +53,12 @@ function App() {
     });
 
     socket.on('room_joined', ({ roomId, playerId }) => {
-      console.log("Joined:", roomId);
       sessionStorage.setItem("josky_roomId", roomId);
       setRoom({ id: roomId, players: [] });
       setPhase('LOBBY');
     });
 
     socket.on('game_rejoined', ({ room, playerId }) => {
-      console.log("Rejoined successfully!", room);
       setRoom(room);
       setPhase(room.gameState === 'LOBBY' ? 'LOBBY' : 'GAME');
       setPlayerId(playerId);
@@ -76,14 +70,16 @@ function App() {
     });
 
     socket.on('game_started', (roomData) => {
-      console.log("Game Started!", roomData);
       setRoom(roomData);
       setPhase('GAME');
     });
 
     socket.on('game_update', (newRoomState) => {
-      console.log("Game Update:", newRoomState);
       setRoom(newRoomState);
+      if (newRoomState && newRoomState.gameState === 'LOBBY') {
+        setPhase('LOBBY');
+        // Reset local states potentially?
+      }
     });
 
     socket.on('error', ({ message }) => {
@@ -233,23 +229,30 @@ function App() {
               <div id="copy-feedback" className="text-sm font-black text-black uppercase mt-2 opacity-0 transition-opacity duration-300 bg-white inline-block px-2 border border-black transform rotate-2">Copié !</div>
             </div>
 
-            {/* Game Options (Only for Host/Everyone for now) */}
-            <div className="mb-6 border-b-2 border-black pb-6">
-              <label className="block text-sm font-bold uppercase mb-2">Fin de la partie :</label>
-              <div className="flex gap-2">
-                {[100, 50, '1_ROUND'].map((opt) => (
-                  <button
-                    key={opt}
-                    onClick={() => setGameLimit(opt)}
-                    className={`flex-1 py-2 font-black border-2 border-black text-xs uppercase
+            {/* Game Options (Host Only) */}
+            {room?.players?.[0]?.id === playerId ? (
+              <div className="mb-6 border-b-2 border-black pb-6">
+                <label className="block text-sm font-bold uppercase mb-2">Fin de la partie :</label>
+                <div className="flex gap-2">
+                  {[100, 50, '1_ROUND'].map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => setGameLimit(opt)}
+                      className={`flex-1 py-2 font-black border-2 border-black text-xs uppercase
                                 ${gameLimit === opt ? 'bg-black text-white shadow-[2px_2px_0px_0px_rgba(100,100,100,1)]' : 'bg-white text-black hover:bg-gray-100'}
                             `}
-                  >
-                    {opt === '1_ROUND' ? '1 Manche' : `${opt} Pts`}
-                  </button>
-                ))}
+                    >
+                      {opt === '1_ROUND' ? '1 Manche' : `${opt} Pts`}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="mb-6 border-b-2 border-black pb-6 text-center opacity-50">
+                <div className="text-xs font-bold uppercase">En attente du chef...</div>
+                <div className="font-black">Mode de jeu : {room.limit === '1_ROUND' ? '1 Manche' : (room.limit || 100) + ' Pts'}</div>
+              </div>
+            )}
 
             <div className="space-y-3 mb-8">
               <div className="text-sm font-bold uppercase border-b-2 border-black pb-1 mb-2">Joueurs prêts</div>
@@ -265,20 +268,40 @@ function App() {
               {(!room?.players || room.players.length === 0) && <div className="text-gray-500 italic">En attente de copains...</div>}
             </div>
 
-            <button
-              onClick={handleStartGame}
-              disabled={!room || room.players.length < 2}
-              className={`w-full font-black py-4 border-2 border-black transition-all ${(!room || room.players.length < 2)
-                ? 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-50'
-                : 'bg-green-400 hover:bg-green-300 text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
-                }`}
-            >
-              {(!room || room.players.length < 2) ? 'ATTENTE JOUEURS (MIN 2)' : 'LANCER LA PARTIE !'}
-            </button>
+            {room?.players?.[0]?.id === playerId ? (
+              <button
+                onClick={handleStartGame}
+                disabled={!room || room.players.length < 2}
+                className={`w-full font-black py-4 border-2 border-black transition-all ${(!room || room.players.length < 2)
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-50'
+                  : 'bg-green-400 hover:bg-green-300 text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                  }`}
+              >
+                {(!room || room.players.length < 2) ? 'ATTENTE JOUEURS (MIN 2)' : 'LANCER LA PARTIE !'}
+              </button>
+            ) : (
+              <div className="w-full font-black py-4 border-2 border-black bg-gray-100 text-gray-500 text-center uppercase">
+                En attente du lancement... ⏳
+              </div>
+            )}
 
             <div className="mt-4 text-xs font-bold text-center text-gray-500">
               Copie le code et envoie-le !
             </div>
+
+            <button
+              onClick={() => {
+                if (room) {
+                  socket.emit('leave_room', { roomId: room.id, userId: playerId });
+                  setRoom(null);
+                  setPhase('LOGIN');
+                  sessionStorage.removeItem("josky_roomId");
+                }
+              }}
+              className="mt-6 w-full bg-transparent hover:bg-red-50 text-red-500 border-2 border-transparent hover:border-red-500 font-bold py-2 text-sm transition-all"
+            >
+              QUITTER LA ROOM 🚪
+            </button>
           </div>
         </div>
       )}
@@ -363,9 +386,30 @@ function App() {
                   ))}
                 </div>
 
-                <button onClick={() => window.location.reload()} className="bg-black text-white hover:bg-gray-800 border-2 border-black font-black py-3 px-8 shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">
-                  REJOUER 🔄
-                </button>
+                <div className="flex gap-4 justify-center">
+                  <button
+                    onClick={() => {
+                      if (room) socket.emit('restart_game', { roomId: room.id });
+                    }}
+                    className="bg-black text-white hover:bg-gray-800 border-2 border-black font-black py-3 px-6 shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-1 active:shadow-none"
+                  >
+                    REJOUER 🔄
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (room) {
+                        socket.emit('leave_room', { roomId: room.id, userId: playerId });
+                        setRoom(null);
+                        setPhase('LOGIN');
+                        sessionStorage.removeItem("josky_roomId");
+                      }
+                    }}
+                    className="bg-red-500 text-white hover:bg-red-600 border-2 border-black font-black py-3 px-6 shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-1 active:shadow-none"
+                  >
+                    QUITTER 🚪
+                  </button>
+                </div>
               </div>
             </div>
           )}

@@ -101,6 +101,11 @@ io.on("connection", (socket) => {
     socket.on("start_game", ({ roomId, settings }) => {
         const room = rooms[roomId];
         if (room && room.players.length >= 2) {
+            // Check if requester is Host (Index 0)
+            if (room.players[0].socketId !== socket.id) {
+                return socket.emit("error", { message: "Seul le créateur peut lancer la partie !" });
+            }
+
             initGame(roomId, settings);
             io.to(roomId).emit("game_started", room);
         }
@@ -234,6 +239,54 @@ io.on("connection", (socket) => {
         }
     });
 
+    socket.on("restart_game", ({ roomId }) => {
+        const room = rooms[roomId];
+        // Only host can restart? Or anyone? Let's allow anyone for now as it's Game Over.
+        if (room) {
+            // Reset everything for a new full game
+            room.players.forEach(p => {
+                p.score = 0;
+                p.totalScore = 0;
+                p.grid = [];
+                p.revealedCount = 0;
+                p.scorePrev = 0;
+                p.penaltyApplied = false;
+                p.connected = true; // ensure connected
+            });
+            room.gameState = 'LOBBY';
+            room.turnState = 'IDLE';
+            room.deck = [];
+            room.discardPile = [];
+            room.currentTurnPlayerIndex = 0;
+            room.drawnCard = null;
+            room.finalTurnInitiatorId = null;
+            room.timeStarted = null;
+
+            io.to(roomId).emit("game_update", room); // Notify change
+            io.to(roomId).emit("player_list_update", room.players); // Update lobby list
+        }
+    });
+
+    socket.on("leave_room", ({ roomId, userId }) => {
+        const room = rooms[roomId];
+        if (room) {
+            const playerIndex = room.players.findIndex(p => p.id === userId);
+            if (playerIndex !== -1) {
+                room.players.splice(playerIndex, 1);
+                socket.leave(roomId);
+                // socket.leave(userId); // Optional, keep user channel
+                io.to(roomId).emit("player_list_update", room.players);
+
+                if (room.players.length === 0) {
+                    delete rooms[roomId];
+                } else if (room.gameState !== 'LOBBY' && room.gameState !== 'GAME_OVER') {
+                    // If active game, maybe pause or continue? 
+                    // For now, let it be.
+                }
+            }
+        }
+    });
+
     socket.on("disconnect", () => {
         console.log("User disconnected:", socket.id);
         // Handle cleanup ONLY if in Lobby
@@ -265,7 +318,7 @@ io.on("connection", (socket) => {
 
 function endTurn(room) { // Reverted io param
     const currentPlayer = room.players[room.currentTurnPlayerIndex];
-    checkColumnRule(currentPlayer);
+    checkColumnRule(currentPlayer, room.discardPile);
 
     // Check if player revealed all
     const allRevealed = currentPlayer.grid.every(c => c.visible || c.cleared);
@@ -353,6 +406,7 @@ function finishRound(room) {
     // 5. Check Game Over Condition
     let gameOver = false;
     const limit = room.limit || 100;
+
 
     if (limit === '1_ROUND') {
         gameOver = true;

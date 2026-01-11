@@ -177,7 +177,7 @@ function startNextRound(roomId) {
 }
 
 
-function checkColumnRule(player) {
+function checkColumnRule(player, discardPile) {
     // Grid 4 columns x 3 rows. Indices:
     // 0  1  2  3
     // 4  5  6  7
@@ -190,21 +190,19 @@ function checkColumnRule(player) {
         const c2 = player.grid[col + 4];
         const c3 = player.grid[col + 8];
 
-        // Ensure all visible and same value (and not already cleared/null?)
-        // Assuming we keep the card object but maybe mark it as value 0 or special status?
-        // Spec says: "colonne est annulée (défaussée) et vaut 0 points".
-        // If we remove them, layout breaks? 
-        // Better to mark them as "cleared" invalidating their value.
-        // Let's add a `cleared` flag to Card? Or replace with null?
-        // If replaced with null, we need to handle rendering.
-        // Let's replace with special "CLEARED" card or just modify properties.
-
+        // Ensure all visible and same value (and not already cleared)
         if (c1.visible && c2.visible && c3.visible && !c1.cleared && !c2.cleared && !c3.cleared) {
             if (c1.value === c2.value && c2.value === c3.value) {
                 // Determine discard pile add? Rules say "défaussée".
-                // Usually put in discard pile. But discard pile has only 1 top strictly?
-                // Skyjo rules: Removed cards go to discard pile.
-                // We will just clear them here to simplify state.
+
+                // Add copies to discard pile if array provided
+                if (discardPile) {
+                    // We push them one by one. The last one pushed will be the new top.
+                    discardPile.push(new Card(c1.value, true));
+                    discardPile.push(new Card(c2.value, true));
+                    discardPile.push(new Card(c3.value, true));
+                }
+
                 c1.cleared = true;
                 c2.cleared = true;
                 c3.cleared = true;
